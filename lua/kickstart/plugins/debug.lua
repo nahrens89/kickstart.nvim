@@ -146,6 +146,52 @@ return {
         detached = vim.fn.has 'win32' == 0,
       },
     }
-    require('dap-python').setup()
+    require("dap-python").setup("uv")
+    local function find_project_root()
+      local markers = {'pyproject.toml', '.git', 'setup.py', 'requirements.txt', 'environment.yml'}
+      local current_file = vim.fn.expand('%:p')
+      local current_dir = vim.fn.fnamemodify(current_file, ':h')
+      
+      while current_dir ~= '/' do
+        for _, marker in ipairs(markers) do
+          local marker_path = current_dir .. '/' .. marker
+          if vim.fn.filereadable(marker_path) == 1 or vim.fn.isdirectory(marker_path) == 1 then
+            return current_dir
+          end
+        end
+        current_dir = vim.fn.fnamemodify(current_dir, ':h')
+      end
+      
+      -- Fallback to current working directory
+      return vim.fn.getcwd()
+    end
+    -- Auto change to project root when opening files
+    -- vim.api.nvim_create_autocmd({"BufEnter"}, {
+    --   pattern = "*",
+      -- callback = function()
+      --   local root_markers = {'.git', 'pyproject.toml', 'requirements.txt', 'setup.py'}
+    --     local current_file = vim.fn.expand('%:p:h')
+    --     for _, marker in ipairs(root_markers) do
+    --       local root = vim.fn.finddir(marker, current_file .. ';')
+    --       if root ~= '' then
+    --         local project_root = vim.fn.fnamemodify(root, ':h')
+    --         vim.cmd('cd ' .. project_root)
+    --         break
+    --       end
+    --     end
+    --   end,
+    -- })
+  --
+    table.insert(require('dap').configurations.python, {
+      type = 'python',
+      request = 'launch',
+      name = 'Launch file (force project root)',
+      program = '${file}',
+      console = 'integratedTerminal',
+      cwd = find_project_root(),
+      env = {
+        PYTHONPATH = find_project_root(),
+    },
+    })
   end,
 }
