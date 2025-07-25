@@ -172,6 +172,7 @@ return {
                         name = 'Launch file (force project root)',
                         program = '${file}',
                         console = 'integratedTerminal',
+                        justMyCode = false,
                         cwd = vim.fn.getcwd(),
                         env = {
                                 PYTHONPATH = vim.fn.getcwd(),
