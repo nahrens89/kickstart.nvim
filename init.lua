@@ -295,8 +295,8 @@ require('lazy').setup({
       },
       signs_staged_enable = true,
       signcolumn = true, -- Toggle with `:Gitsigns toggle_signs`
-      numhl = false,     -- Toggle with `:Gitsigns toggle_numhl`
-      linehl = false,    -- Toggle with `:Gitsigns toggle_linehl`
+      numhl = false, -- Toggle with `:Gitsigns toggle_numhl`
+      linehl = false, -- Toggle with `:Gitsigns toggle_linehl`
       word_diff = false, -- Toggle with `:Gitsigns toggle_word_diff`
       watch_gitdir = {
         follow_files = true,
@@ -315,7 +315,7 @@ require('lazy').setup({
       current_line_blame_formatter = '<author>, <author_time:%R> - <summary>',
       sign_priority = 6,
       update_debounce = 100,
-      status_formatter = nil,  -- Use default
+      status_formatter = nil, -- Use default
       max_file_length = 40000, -- Disable if file is longer than this (in lines)
       preview_config = {
         -- Options passed to nvim_open_win
@@ -341,7 +341,7 @@ require('lazy').setup({
   -- Then, because we use the `opts` key (recommended), the configuration runs
   -- after the plugin has been loaded as `require(MODULE).setup(opts)`.
 
-  {                     -- Useful plugin to show you pending keybinds.
+  { -- Useful plugin to show you pending keybinds.
     'folke/which-key.nvim',
     event = 'VimEnter', -- Sets the loading event to 'VimEnter'
     opts = {
@@ -422,7 +422,7 @@ require('lazy').setup({
       { 'nvim-telescope/telescope-ui-select.nvim' },
 
       -- Useful for getting pretty icons, but requires a Nerd Font.
-      { 'nvim-tree/nvim-web-devicons',            enabled = vim.g.have_nerd_font },
+      { 'nvim-tree/nvim-web-devicons', enabled = vim.g.have_nerd_font },
     },
     config = function()
       -- Telescope is a fuzzy finder that comes with a lot of different things that
@@ -530,7 +530,7 @@ require('lazy').setup({
       'WhoIsSethDaniel/mason-tool-installer.nvim',
 
       -- Useful status updates for LSP.
-      { 'j-hui/fidget.nvim',    opts = {} },
+      { 'j-hui/fidget.nvim', opts = {} },
 
       -- Allows extra capabilities provided by blink.cmp
       'saghen/blink.cmp',
@@ -704,6 +704,12 @@ require('lazy').setup({
       --  So, we create new capabilities with blink.cmp, and then broadcast that to the servers.
       local capabilities = require('blink.cmp').get_lsp_capabilities()
 
+      -- Fix offset encoding conflicts by standardizing to utf-16
+      -- This prevents the "multiple different client offset_encodings detected" warning
+      capabilities.general = capabilities.general or {}
+      capabilities.general.positionEncodings = { 'utf-16' }
+      capabilities.offsetEncoding = { 'utf-16' }
+
       -- Enable the following language servers
       --  Feel free to add/remove any LSPs that you want here. They will automatically be installed.
       --
@@ -716,7 +722,32 @@ require('lazy').setup({
       local servers = {
         -- clangd = {},
         -- gopls = {},
-        -- pyright = {},
+        -- pyright = {
+        --   before_init = function(_, config)
+        --     local python_path = get_python_path(config.root_dir)
+        --     config.settings.python.pythonPath = python_path
+
+        --     -- Add uv-specific paths if this is a uv project
+        --     local util = require('lspconfig').util
+        --     if vim.fn.filereadable(util.path.join(config.root_dir, 'pyproject.toml')) == 1 then
+        --       -- This helps pyright find packages in uv environments
+        --       config.settings.python.analysis.extraPaths = config.settings.python.analysis.extraPaths or {}
+        --       table.insert(config.settings.python.analysis.extraPaths, util.path.join(config.root_dir, '.venv', 'lib'))
+        --     end
+        --   end,
+        --   settings = {
+        --     python = {
+        --       analysis = {
+        --         autoSearchPaths = true,
+        --         useLibraryCodeForTypes = true,
+        --         diagnosticMode = "workspace",
+        --         typeCheckingMode = "basic",
+        --         autoImportCompletions = true,
+        --         extraPaths = {},
+        --       },
+        --     },
+        --   },
+        -- },
         -- rust_analyzer = {},
         -- ... etc. See `:help lspconfig-all` for a list of all the pre-configured LSPs
         --
@@ -726,22 +757,6 @@ require('lazy').setup({
         -- But for many setups, the LSP (`ts_ls`) will work just fine
         -- ts_ls = {},
         --
-        pylsp = {
-          settings = {
-            pylsp = {
-              plugins = {
-                pyflakes = { enabled = false },
-                pycodestyle = { enabled = false },
-                autopep8 = { enabled = false },
-                yapf = { enabled = false },
-                mccabe = { enabled = false },
-                pylsp_mypy = { enabled = false },
-                pylsp_black = { enabled = false },
-                pylsp_isort = { enabled = false },
-              },
-            },
-          },
-        },
         lua_ls = {
           -- cmd = { ... },
           -- filetypes = { ... },
@@ -774,6 +789,7 @@ require('lazy').setup({
       local ensure_installed = vim.tbl_keys(servers or {})
       vim.list_extend(ensure_installed, {
         'stylua', -- Used to format Lua code
+        'markdownlint', -- Used to lint Markdown files
       })
       require('mason-tool-installer').setup { ensure_installed = ensure_installed }
 
@@ -1072,3 +1088,13 @@ require('lazy').setup({
 
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
+
+-- Python-specific autocommand to ensure proper LSP setup
+vim.api.nvim_create_autocmd('FileType', {
+  pattern = 'python',
+  callback = function()
+    -- Set proper Python path for the buffer
+    local bufnr = vim.api.nvim_get_current_buf()
+    vim.api.nvim_buf_set_var(bufnr, 'python_host_prog', vim.fn.exepath 'python3' or vim.fn.exepath 'python')
+  end,
+})
