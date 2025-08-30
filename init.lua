@@ -178,6 +178,7 @@ vim.keymap.set('n', '<Esc>', '<cmd>nohlsearch<CR>')
 
 -- Diagnostic keymaps
 vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagnostic [Q]uickfix list' })
+vim.keymap.set('n', '<leader>e', vim.diagnostic.open_float, { desc = 'Open diagnostic floating window' })
 
 -- Exit terminal mode in the builtin terminal with a shortcut that is a bit easier
 -- for people to discover. Otherwise, you normally need to press <C-\><C-n>, which
@@ -748,6 +749,58 @@ require('lazy').setup({
         --     },
         --   },
         -- },
+        pyright = {
+          before_init = function(_, config)
+            -- Try to find Python executable in virtual environment first
+            local util = require 'lspconfig.util'
+            local path = util.path
+
+            -- Check for various virtual environment indicators
+            local venv_path = vim.env.VIRTUAL_ENV
+            if not venv_path then
+              -- Look for common venv directories
+              local possible_venvs = { '.venv', 'venv', '.virtualenv' }
+              for _, venv_name in ipairs(possible_venvs) do
+                local venv_dir = path.join(config.root_dir, venv_name)
+                if vim.fn.isdirectory(venv_dir) == 1 then
+                  venv_path = venv_dir
+                  break
+                end
+              end
+            end
+
+            if venv_path then
+              local python_path = path.join(venv_path, 'bin', 'python')
+              if vim.fn.executable(python_path) == 1 then
+                config.settings.python.pythonPath = python_path
+              end
+            end
+
+            -- Add uv-specific paths if this is a uv project
+            if vim.fn.filereadable(path.join(config.root_dir, 'pyproject.toml')) == 1 then
+              -- This helps pyright find packages in uv environments
+              config.settings.python.analysis.extraPaths = config.settings.python.analysis.extraPaths or {}
+              table.insert(config.settings.python.analysis.extraPaths, path.join(config.root_dir, '.venv', 'lib'))
+            end
+          end,
+          settings = {
+            python = {
+              analysis = {
+                autoSearchPaths = true,
+                useLibraryCodeForTypes = true,
+                diagnosticMode = 'openFilesOnly', -- or "workspace" for project-wide checking
+                typeCheckingMode = 'basic', -- "off", "basic", or "strict"
+                autoImportCompletions = true,
+                inlayHints = {
+                  variableTypes = true,
+                  functionReturnTypes = true,
+                  callArgumentNames = true,
+                  parameterNames = true,
+                },
+              },
+            },
+          },
+        },
         -- rust_analyzer = {},
         -- ... etc. See `:help lspconfig-all` for a list of all the pre-configured LSPs
         --
@@ -790,6 +843,7 @@ require('lazy').setup({
       vim.list_extend(ensure_installed, {
         'stylua', -- Used to format Lua code
         'markdownlint', -- Used to lint Markdown files
+        'ruff', -- Python linting and formatting
       })
       require('mason-tool-installer').setup { ensure_installed = ensure_installed }
 
@@ -810,46 +864,59 @@ require('lazy').setup({
     end,
   },
 
-  -- { -- Autoformat
-  --   'stevearc/conform.nvim',
-  --   event = { 'BufWritePre' },
-  --   cmd = { 'ConformInfo' },
-  --   keys = {
-  --     {
-  --       '<leader>f',
-  --       function()
-  --         require('conform').format { async = true, lsp_format = 'fallback' }
-  --       end,
-  --       mode = '',
-  --       desc = '[F]ormat buffer',
-  --     },
-  --   },
-  --   opts = {
-  --     notify_on_error = false,
-  --     format_on_save = function(bufnr)
-  --       -- Disable "format_on_save lsp_fallback" for languages that don't
-  --       -- have a well standardized coding style. You can add additional
-  --       -- languages here or re-enable it for the disabled ones.
-  --       local disable_filetypes = { c = true, cpp = true }
-  --       if disable_filetypes[vim.bo[bufnr].filetype] then
-  --         return nil
-  --       else
-  --         return {
-  --           timeout_ms = 500,
-  --           lsp_format = 'fallback',
-  --         }
-  --       end
-  --     end,
-  --     formatters_by_ft = {
-  --       lua = { 'stylua' },
-  --       -- Conform can also run multiple formatters sequentially
-  --       -- python = { "isort", "black" },
-  --       --
-  --       -- You can use 'stop_after_first' to run the first available formatter from the list
-  --       -- javascript = { "prettierd", "prettier", stop_after_first = true },
-  --     },
-  --   },
-  -- },
+  { -- Autoformat
+    'stevearc/conform.nvim',
+    event = { 'BufWritePre' },
+    cmd = { 'ConformInfo' },
+    keys = {
+      {
+        '<leader>f',
+        function()
+          require('conform').format { async = true, lsp_format = 'fallback' }
+        end,
+        mode = '',
+        desc = '[F]ormat buffer',
+      },
+    },
+    opts = {
+      notify_on_error = false,
+      format_on_save = function(bufnr)
+        -- Disable "format_on_save lsp_fallback" for languages that don't
+        -- have a well standardized coding style. You can add additional
+        -- languages here or re-enable it for the disabled ones.
+        local disable_filetypes = { c = true, cpp = true }
+        if disable_filetypes[vim.bo[bufnr].filetype] then
+          return nil
+        else
+          return {
+            timeout_ms = 500,
+            lsp_format = 'fallback',
+          }
+        end
+      end,
+      formatters_by_ft = {
+        lua = { 'stylua' },
+        python = { 'ruff_format', 'ruff_organize_imports' },
+        -- Conform can also run multiple formatters sequentially
+        -- python = { "isort", "black" },
+        --
+        -- You can use 'stop_after_first' to run the first available formatter from the list
+        -- javascript = { "prettierd", "prettier", stop_after_first = true },
+      },
+      formatters = {
+        ruff_format = {
+          command = 'ruff',
+          args = { 'format', '--line-length=120', '--stdin-filename', '$FILENAME', '-' },
+          stdin = true,
+        },
+        ruff_organize_imports = {
+          command = 'ruff',
+          args = { 'check', '--select=I', '--fix', '--stdin-filename', '$FILENAME', '-' },
+          stdin = true,
+        },
+      },
+    },
+  },
 
   { -- Autocompletion
     'saghen/blink.cmp',

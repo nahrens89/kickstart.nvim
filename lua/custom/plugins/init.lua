@@ -3,6 +3,7 @@
 --
 -- See the kickstart.nvim README for more information
 return {
+  -- Disabled none-ls in favor of nvim-lint for Python linting
   -- {
   --   'nvimtools/none-ls.nvim',
   --   dependencies = {
@@ -23,8 +24,9 @@ return {
   --     }
   --     local null_ls = require 'null-ls'
   --     local sources = {
-  --       require('none-ls.formatting.ruff').with { extra_args = { '--extend-select', 'I', '--line-length=120' } },
-  --       require('none-ls.formatting.ruff_format').with { extra_args = { '--line-length=120' } },
+  --       -- Remove Ruff sources since we're using Ruff LSP server now
+  --       -- require('none-ls.formatting.ruff').with { extra_args = { '--extend-select', 'I', '--line-length=120' } },
+  --       -- require('none-ls.formatting.ruff_format').with { extra_args = { '--line-length=120' } },
   --       null_ls.builtins.formatting.prettier.with {
   --         filetypes = { 'json', 'yaml', 'markdown','html', 'css', 'javascript', 'typescript' },
   --         extra_args = { '--print-width', '120', '--prose-wrap', 'always','--tab-width', '2', '--indent-type', 'Spaces', '--indent-width', '2'}
