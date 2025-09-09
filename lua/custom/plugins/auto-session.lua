@@ -14,7 +14,6 @@ return {
   opts = {
     suppressed_dirs = { '~/', '~/Downloads', '/' },
     -- log_level = 'debug',
-    auto_clean_after_session_restore = true,
     -- The following are already the default values, no need to provide them if these are already the settings you want.
     session_lens = {
       picker = nil, -- "telescope"|"snacks"|"fzf"|"select"|nil Pickers are detected automatically but you can also manually choose one. Falls back to vim.ui.select
@@ -49,7 +48,7 @@ return {
         -- For Fzf-Lua, picker_opts just turns into winopts, see:
         -- https://github.com/ibhagwan/fzf-lua#customization
         --
-        --  height = 0.8,
+        --  eight = 0.8,
         --  width = 0.50,
       },
 

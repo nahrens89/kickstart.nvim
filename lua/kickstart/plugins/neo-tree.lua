@@ -10,10 +10,12 @@ return {
     'MunifTanjim/nui.nvim',
   },
   lazy = false,
+
   keys = {
     { '\\', ':Neotree reveal<CR>', desc = 'NeoTree reveal', silent = true },
   },
   opts = {
+    auto_clean_after_session_restore = true,
     filesystem = {
       filtered_items = {
         visible = true,
