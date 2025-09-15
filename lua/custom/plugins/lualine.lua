@@ -2,12 +2,22 @@ return {
   'nvim-lualine/lualine.nvim',
   dependencies = { 'nvim-tree/nvim-web-devicons' },
   opts = {
-    theme = 'eldritch',
-    component_seperators = '|',
-    section_seperators = '',
+    theme = 'auto', -- try changing this to see if it takes effect
+    options = { -- this should be under 'options', not at root level
+      component_separators = '|',
+      section_separators = '',
+    },
     sections = {
       lualine_a = { 'mode' },
-      lualine_b = { 'branch', 'diff', 'diagnostics' },
+      lualine_b = {
+        'branch',
+        {
+          'diff',
+          symbols = { added = '', modified = '', removed = '' },
+          -- symbols = { added = '+', modified = '~', removed = '-' },
+        },
+        'diagnostics',
+      },
       lualine_c = { 'filename' },
       lualine_x = { 'encoding', 'fileformat', 'filetype' },
       lualine_y = { 'progress' },
