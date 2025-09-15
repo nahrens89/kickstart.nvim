@@ -34,8 +34,8 @@ require('lazy').setup({
   require 'kickstart.plugins.conform',
 
   require 'kickstart.plugins.blink-cmp',
-  require 'kickstart.plugins.catppuccin',
-  -- require 'kickstart.plugins.eldritch',
+
+  require 'kickstart.plugins.cyberdream',
 
   require 'kickstart.plugins.todo-comments',
 
