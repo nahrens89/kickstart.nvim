@@ -10,6 +10,35 @@ return {
       ---@diagnostic disable-next-line: missing-fields
       require('eldritch').setup {
         transparent = true,
+        on_highlights = function(highlights, colors)
+          -- Override comment colors
+          -- Variable colors
+          highlights.Identifier = { fg = colors.bright_cyan }
+          highlights['@variable'] = { fg = colors.bright_cyan } -- For treesitter variables
+          -- highlights['@variable.builtin'] = { fg = colors.bright_red } -- For built-in variables like self, this
+          highlights['@parameter'] = { fg = colors.orange } -- For function parameters
+          highlights['@field'] = { fg = colors.bright_cyan } -- For object fields/properties
+          -- Comment colors
+          highlights.Comment = { fg = colors.dark5 }
+          highlights['@comment'] = { fg = colors.dark5 } -- For treesitter comments
+          highlights['@comment.block'] = { fg = colors.dark5 } -- For multiline/block comments
+          highlights['@comment.documentation'] = { fg = colors.dark5 } -- For documentation comments
+          highlights['@string.documentation'] = { fg = colors.dark5 } -- For docstrings
+          highlights['@text.literal'] = { fg = colors.dark5 } -- For literal text blocks
+          highlights['@text.reference'] = { fg = colors.dark5 } -- For reference text
+
+          -- Punctuation colors
+          highlights.Operator = { fg = colors.bright_green }
+          highlights['@operator'] = { fg = colors.bright_green } -- For treesitter operators
+          highlights['@punctuation'] = { fg = colors.bright_green } -- For punctuation like . , ; etc
+          -- Function call colors
+          highlights.Function = { fg = colors.dark_green }
+          highlights['@function'] = { fg = colors.dark_green } -- For treesitter functions
+          highlights['@function.call'] = { fg = colors.bright_red } -- For function calls
+          highlights['@function.builtin'] = { fg = colors.bright_green } -- For built-in functions like print, len, etc
+          highlights['@method'] = { fg = colors.dark_green } -- For method calls
+          highlights['@method.call'] = { fg = colors.bright_red } -- For method calls
+        end,
       }
 
       -- Load the colorscheme here.
